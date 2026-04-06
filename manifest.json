@@ -1,0 +1,59 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "称号add-on",
+    "description": "他者に実力を見せつけろ",
+    "uuid": "fba92406-1beb-4e00-9170-adfc3054cd73",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "description": "Data",
+      "type": "data",
+      "uuid": "a3c73fad-f8e1-4f6a-bc62-c175f0f7ada3",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "description": "Script",
+      "type": "script",
+      "uuid": "cc0a874a-be1a-474f-a240-917e1f588523",
+      "version": [
+        1,
+        5,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "1.2.0"
+    },
+    {
+      "uuid": "a91525ba-1cc7-4939-a25e-6ccc142c5e2d",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}
