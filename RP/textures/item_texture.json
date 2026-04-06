@@ -1,0 +1,9 @@
+{
+    "resource_pack_name": "称号add-on_RP",
+    "texture_name": "atlas.items",
+    "texture_data": {
+        "syougou_menu_book": {
+            "textures": "textures/items/menu_book"
+        }
+    }
+}

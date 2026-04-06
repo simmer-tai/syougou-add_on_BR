@@ -1,0 +1,67 @@
+{
+    "providers": [
+        {
+            "type": "bitmap",
+            "file": "textures/items/iron_pickaxe.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE300"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "file": "textures/items/wheat.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE301"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "file": "textures/items/iron_axe.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE302"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "file": "textures/items/menu_book.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE303"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "file": "textures/items/iron_sword.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE304"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "file": "textures/items/wheat.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE305"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "file": "textures/items/iron_shovel.png",
+            "height": 10,
+            "ascent": 7,
+            "chars": [
+                "\uE306"
+            ]
+        }
+    ]
+}
