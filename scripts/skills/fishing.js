@@ -63,7 +63,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
     // 所有者特定: 最も近くで釣り竿を持っているプレイヤー
     const players = entity.dimension.getPlayers({
         location: entity.location,
-        maxDistance: 4,
+        maxDistance: 64,
         closest: 1
     });
     if (players.length === 0) return;
