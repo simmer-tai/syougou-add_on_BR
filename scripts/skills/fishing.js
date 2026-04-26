@@ -63,11 +63,24 @@ function getInventorySnapshot(player) {
 // 釣り竿使用時に記録
 world.afterEvents.itemUse.subscribe((event) => {
     if (event.itemStack.typeId !== "minecraft:fishing_rod") return;
+    const player = event.source;
+
+    // 同じプレイヤーの既存セッションをすべてクリア（二重付与防止）
+    for (const [hookId, data] of watchedHooks) {
+        if (data.playerId === player.id) {
+            watchedHooks.delete(hookId);
+        }
+    }
+    for (const [hookId, pending] of pendingChecks) {
+        if (pending.playerId === player.id) {
+            pendingChecks.delete(hookId);
+        }
+    }
     
     // キャスト時点のスナップショットを記録
-    lastCastPlayer.set(event.source.id, {
-        player: event.source,
-        snapshot: getInventorySnapshot(event.source)
+    lastCastPlayer.set(player.id, {
+        player: player,
+        snapshot: getInventorySnapshot(player)
     });
 });
 
