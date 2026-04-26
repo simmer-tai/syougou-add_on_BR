@@ -34,10 +34,10 @@ const JUNK_ITEMS = new Set([
     "minecraft:tripwire_hook"
 ]);
 
-// 直近に釣り竿を使ったプレイヤー: playerId -> { player, snapshot }
+// 直近に釣り竿を使ったプレイヤー: playerId -> { player }
 const lastCastPlayer = new Map();
 
-// 監視中の浮き: hookId -> { playerId, dimensionId, snapshot }
+// 監視中の浮き: hookId -> { playerId, dimensionId }
 const watchedHooks = new Map();
 
 // 消滅後の監視リスト: playerId -> { snapshot, ticksWaited }
@@ -64,10 +64,9 @@ function getInventorySnapshot(player) {
 world.afterEvents.itemUse.subscribe((event) => {
     if (event.itemStack.typeId !== "minecraft:fishing_rod") return;
     
-    // 使用したプレイヤーとその時点のスナップショットを記録
+    // 使用したプレイヤーを記録
     lastCastPlayer.set(event.source.id, {
-        player: event.source,
-        snapshot: getInventorySnapshot(event.source)
+        player: event.source
     });
 });
 
@@ -76,7 +75,6 @@ world.afterEvents.entitySpawn.subscribe((event) => {
     const { entity } = event;
     if (entity.typeId !== "minecraft:fishing_hook") return;
 
-    // キャスト記録があるプレイヤーの中から、最も近いプレイヤーを選ぶ
     let bestPlayerId = null;
     let minDistance = Infinity;
 
@@ -100,13 +98,11 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
     if (!bestPlayerId) return;
 
-    const data = lastCastPlayer.get(bestPlayerId);
     lastCastPlayer.delete(bestPlayerId);
 
     watchedHooks.set(entity.id, {
         playerId: bestPlayerId,
-        dimensionId: entity.dimension.id,
-        snapshot: data.snapshot
+        dimensionId: entity.dimension.id
     });
 });
 
@@ -122,9 +118,9 @@ system.runInterval(() => {
             const player = world.getAllPlayers().find(p => p.id === data.playerId);
             if (!player?.isValid()) continue;
 
-            // 浮きが消えたら監視待機リストに移動
+            // 浮きが消えた瞬間にスナップショットを取得し、監視リストに移動
             pendingChecks.set(data.playerId, {
-                snapshot: data.snapshot,
+                snapshot: getInventorySnapshot(player),
                 ticksWaited: 0
             });
         }
@@ -146,7 +142,7 @@ system.runInterval(() => {
 
         let maxXp = 0;
         for (const [typeId, amount] of afterSnapshot) {
-            const prev = pending.snapshot.get(typeId) ?? 0;
+            const prev = pending.snapshot?.get(typeId) ?? 0;
             if (amount <= prev) continue;
 
             if (FISH_ITEMS.has(typeId)) maxXp = Math.max(maxXp, XP_FISH);
@@ -154,17 +150,15 @@ system.runInterval(() => {
             else if (JUNK_ITEMS.has(typeId)) maxXp = Math.max(maxXp, XP_JUNK);
         }
 
-        // アイテム獲得を検知したらXP付与して監視終了
         if (maxXp > 0) {
             updateSkillXp(player, "fishing", "漁業", maxXp);
             pendingChecks.delete(playerId);
             continue;
         }
 
-        // 最大20tick (約1秒) まで監視を続ける
         pending.ticksWaited += 2;
         if (pending.ticksWaited >= 20) {
-            pendingChecks.delete(playerId); // タイムアウト
+            pendingChecks.delete(playerId);
         }
     }
 }, 2);
