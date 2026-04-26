@@ -17,7 +17,6 @@ const FISH_ITEMS = new Set([
 const TREASURE_ITEMS = new Set([
     "minecraft:enchanted_book",
     "minecraft:bow",
-    // "minecraft:fishing_rod", // ユーザー指定によりジャンク扱いに統一するため削除
     "minecraft:name_tag",
     "minecraft:saddle",
     "minecraft:leather_boots",
@@ -34,6 +33,9 @@ const JUNK_ITEMS = new Set([
     "minecraft:lily_pad",
     "minecraft:tripwire_hook"
 ]);
+
+// 直近に釣り竿を使ったプレイヤー: playerId -> { player, snapshot }
+const lastCastPlayer = new Map();
 
 // 監視中の浮き: hookId -> { playerId, dimensionId, snapshot }
 const watchedHooks = new Map();
@@ -55,27 +57,55 @@ function getInventorySnapshot(player) {
     return snapshot;
 }
 
-// 釣り針のスポーンを監視
+// 釣り竿使用時に記録
+world.afterEvents.itemUse.subscribe((event) => {
+    if (event.itemStack.typeId !== "minecraft:fishing_rod") return;
+    
+    // 使用したプレイヤーとその時点のスナップショットを記録
+    lastCastPlayer.set(event.source.id, {
+        player: event.source,
+        snapshot: getInventorySnapshot(event.source)
+    });
+});
+
+// 浮きスポーン時に直近のキャストと紐付け
 world.afterEvents.entitySpawn.subscribe((event) => {
     const { entity } = event;
     if (entity.typeId !== "minecraft:fishing_hook") return;
 
-    // 所有者特定: 最も近くで釣り竿を持っているプレイヤー
-    const players = entity.dimension.getPlayers({
-        location: entity.location,
-        maxDistance: 64,
-        closest: 1
-    });
-    if (players.length === 0) return;
-    const p = players[0];
-    const mainHand = p.getComponent("equippable")?.getEquipment("Mainhand");
-    if (mainHand?.typeId !== "minecraft:fishing_rod") return;
+    // キャスト記録があるプレイヤーの中から、最も近いプレイヤーを選ぶ
+    let bestPlayerId = null;
+    let minDistance = Infinity;
 
-    // スポーン時点のインベントリスナップショットを保存
+    for (const [playerId, data] of lastCastPlayer) {
+        const p = data.player;
+        if (!p.isValid() || p.dimension.id !== entity.dimension.id) continue;
+
+        // 距離を計算
+        const loc = p.location;
+        const eloc = entity.location;
+        const dist = Math.sqrt(
+            Math.pow(loc.x - eloc.x, 2) + 
+            Math.pow(loc.y - eloc.y, 2) + 
+            Math.pow(loc.z - eloc.z, 2)
+        );
+
+        if (dist < minDistance) {
+            minDistance = dist;
+            bestPlayerId = playerId;
+        }
+    }
+
+    if (!bestPlayerId) return;
+
+    const data = lastCastPlayer.get(bestPlayerId);
+    // 紐付けたのでキャスト記録から削除
+    lastCastPlayer.delete(bestPlayerId);
+
     watchedHooks.set(entity.id, {
-        playerId: p.id,
+        playerId: bestPlayerId,
         dimensionId: entity.dimension.id,
-        snapshot: getInventorySnapshot(p)
+        snapshot: data.snapshot
     });
 });
 
