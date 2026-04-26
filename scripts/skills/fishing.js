@@ -40,6 +40,9 @@ const lastCastPlayer = new Map();
 // 監視中の浮き: hookId -> { playerId, dimensionId, snapshot }
 const watchedHooks = new Map();
 
+// 消滅後の監視リスト: playerId -> { snapshot, ticksWaited }
+const pendingChecks = new Map();
+
 /**
  * インベントリのスナップショット取得
  */
@@ -81,7 +84,6 @@ world.afterEvents.entitySpawn.subscribe((event) => {
         const p = data.player;
         if (!p.isValid() || p.dimension.id !== entity.dimension.id) continue;
 
-        // 距離を計算
         const loc = p.location;
         const eloc = entity.location;
         const dist = Math.sqrt(
@@ -99,7 +101,6 @@ world.afterEvents.entitySpawn.subscribe((event) => {
     if (!bestPlayerId) return;
 
     const data = lastCastPlayer.get(bestPlayerId);
-    // 紐付けたのでキャスト記録から削除
     lastCastPlayer.delete(bestPlayerId);
 
     watchedHooks.set(entity.id, {
@@ -109,27 +110,43 @@ world.afterEvents.entitySpawn.subscribe((event) => {
     });
 });
 
-// 2tickごとに浮きの生存確認
+// 2tickごとに監視
 system.runInterval(() => {
+    // 1. 浮きの生存確認
     for (const [hookId, data] of watchedHooks) {
         const dim = world.getDimension(data.dimensionId);
-        // 生存確認
         const stillExists = dim.getEntities().some(e => e.id === hookId);
 
-        if (stillExists) continue;
+        if (!stillExists) {
+            watchedHooks.delete(hookId);
+            const player = world.getAllPlayers().find(p => p.id === data.playerId);
+            if (!player?.isValid()) continue;
 
-        // 消滅検知
-        watchedHooks.delete(hookId);
+            // 浮きが消えたら監視待機リストに移動
+            pendingChecks.set(data.playerId, {
+                snapshot: data.snapshot,
+                ticksWaited: 0
+            });
+        }
+    }
 
-        const player = world.getAllPlayers().find(p => p.id === data.playerId);
-        if (!player?.isValid()) continue;
+    // 2. 消滅後のインベントリ増加待機監視
+    for (const [playerId, pending] of pendingChecks) {
+        const player = world.getAllPlayers().find(p => p.id === playerId);
+        if (!player?.isValid()) {
+            pendingChecks.delete(playerId);
+            continue;
+        }
 
         const afterSnapshot = getInventorySnapshot(player);
-        if (!afterSnapshot) continue;
+        if (!afterSnapshot) {
+            pendingChecks.delete(playerId);
+            continue;
+        }
 
         let maxXp = 0;
         for (const [typeId, amount] of afterSnapshot) {
-            const prev = data.snapshot.get(typeId) ?? 0;
+            const prev = pending.snapshot.get(typeId) ?? 0;
             if (amount <= prev) continue;
 
             if (FISH_ITEMS.has(typeId)) maxXp = Math.max(maxXp, XP_FISH);
@@ -137,8 +154,17 @@ system.runInterval(() => {
             else if (JUNK_ITEMS.has(typeId)) maxXp = Math.max(maxXp, XP_JUNK);
         }
 
+        // アイテム獲得を検知したらXP付与して監視終了
         if (maxXp > 0) {
             updateSkillXp(player, "fishing", "漁業", maxXp);
+            pendingChecks.delete(playerId);
+            continue;
+        }
+
+        // 最大20tick (約1秒) まで監視を続ける
+        pending.ticksWaited += 2;
+        if (pending.ticksWaited >= 20) {
+            pendingChecks.delete(playerId); // タイムアウト
         }
     }
 }, 2);
