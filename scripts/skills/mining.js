@@ -101,6 +101,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
 
         if (dropAmount > 0) {
             const dropItemType = MINING_DROP_MAP[typeId];
+            
             if (dropItemType) {
                 try {
                     // アイテムをスポーンさせる

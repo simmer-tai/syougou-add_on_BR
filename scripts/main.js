@@ -72,11 +72,26 @@ const TAMING_ITEMS = new Set([
     "minecraft:wheat_seeds",
     "minecraft:pumpkin_seeds",
     "minecraft:melon_seeds",
-    "minecraft:beetroot_seeds"
+    "minecraft:beetroot_seeds",
+    "minecraft:bamboo"
 ]);
 
 const playerLastBlockLocation = new Map();
 const playerPlacedCropLocations = new Set();
+const playerHandBeforeInteract = new Map(); // 追加
+
+world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
+    const { player, itemStack } = event;
+    if (itemStack) {
+        playerHandBeforeInteract.set(player.id, {
+            typeId: itemStack.typeId,
+            amount: itemStack.amount,
+            slot: player.selectedSlotIndex
+        });
+    } else {
+        playerHandBeforeInteract.delete(player.id);
+    }
+});
 
 function addScore(player, objectiveId, amount = 1) {
     if (!player || amount === 0) return;
@@ -299,59 +314,79 @@ world.afterEvents.playerTrade?.subscribe((event) => {
 
 // 12. Taming (Attempts/Interactions)
 world.afterEvents.playerInteractWithEntity.subscribe((event) => {
-    const { player, itemStack } = event;
-    if (itemStack && TAMING_ITEMS.has(itemStack.typeId)) {
-        addScore(player, OBJECTIVES.TAMING);
-    }
+    const { player, target } = event;
 
-    // Specific Taming Interactions (Pet Lovers)
-    if (event.target && itemStack) {
-        const typeId = event.target.typeId;
-        const itemId = itemStack.typeId;
+    const beforeItem = playerHandBeforeInteract.get(player.id);
+    
+    // ラグ対策として 1ティック後に判定を行う
+    system.run(() => {
+        if (!player.isValid() || !target.isValid()) return;
 
-        // Horse (Riding Club - generic interaction or specific? "Tame horse" usually means riding until hearts)
-        // User said "Mount horse/donkey/mule". Interaction usually implies mounting if empty hand or specific item.
-        // Simplified: Interact with Horse/Donkey/Mule
-        if (typeId === "minecraft:horse" || typeId === "minecraft:donkey" || typeId === "minecraft:mule") {
-            addScore(player, OBJECTIVES.TAME_HORSE);
+        // 現在の状態を取得
+        const inventory = player.getComponent("minecraft:inventory");
+        if (!inventory) return;
+        const container = inventory.container;
+        const currentItem = beforeItem ? container.getItem(beforeItem.slot) : undefined;
+
+        const itemTypeId = currentItem?.typeId;
+        const itemAmount = currentItem?.amount ?? 0;
+        
+        // 消費判定
+        let isConsumed = false;
+        if (beforeItem) {
+            isConsumed = itemAmount < beforeItem.amount || itemTypeId !== beforeItem.typeId;
         }
 
-        // Dog Lover (Bone)
-        if (typeId === "minecraft:wolf" && itemId === "minecraft:bone") {
-            addScore(player, OBJECTIVES.TAME_WOLF_BONE);
-        }
-        // Cat Lover (Fish) - Ocelot or Cat. Fish items.
-        if ((typeId === "minecraft:cat" || typeId === "minecraft:ocelot") &&
-            (itemId === "minecraft:cod" || itemId === "minecraft:salmon" || itemId === "minecraft:tropical_fish" || itemId === "minecraft:pufferfish")) {
-            addScore(player, OBJECTIVES.TAME_CAT_FISH);
-        }
-        // Bird Lover (Seeds)
-        if (typeId === "minecraft:parrot" && itemId.includes("seeds")) {
-            addScore(player, OBJECTIVES.TAME_PARROT_SEEDS);
+        const effectiveItemId = isConsumed ? (beforeItem?.typeId) : itemTypeId;
+
+        // 手懐けアイテムを使用した場合の全般カウント
+        if (isConsumed && effectiveItemId && TAMING_ITEMS.has(effectiveItemId)) {
+            addScore(player, OBJECTIVES.TAMING);
         }
 
-        // 4. Blue Axolotl Catching (Chosen by Axolotl)
-        // Check if player is using a bucket (water bucket or empty bucket depending on logic) on an Axolotl
-        // In Bedrock, you catch axolotl with water_bucket.
-        if (event.target.typeId === "minecraft:axolotl") {
-            // Variant 4 is Blue
-            const variant = event.target.getComponent("minecraft:variant")?.value;
-            if (variant === 4) {
-                // Check if player holds water bucket (usually used to catch)
-                if (itemStack.typeId === "minecraft:water_bucket" || itemStack.typeId === "minecraft:bucket") {
-                    // We tag the player instantly.
-                    // Note: Interaction event happens *before* the item is replaced usually, or during.
-                    // We assume successful catch if they interact with valid tool.
-                    player.addTag("title_axolotl_chosen");
-                    player.sendMessage("§b[称号条件達成]§f 青色のウーパールーパーを捕獲しました！");
+        // 特定のターゲットとアイテムの組み合わせ
+        if (target) {
+            const targetTypeId = target.typeId;
+
+            // Horse (Riding Club) - 騎乗はアイテム消費を問わない
+            if (targetTypeId === "minecraft:horse" || targetTypeId === "minecraft:donkey" || targetTypeId === "minecraft:mule") {
+                addScore(player, OBJECTIVES.TAME_HORSE);
+            }
+
+            if (effectiveItemId) {
+                // Dog Lover (Bone)
+                if (isConsumed && targetTypeId === "minecraft:wolf" && effectiveItemId === "minecraft:bone") {
+                    addScore(player, OBJECTIVES.TAME_WOLF_BONE);
+                }
+                // Cat Lover (Fish)
+                if (isConsumed && (targetTypeId === "minecraft:cat" || targetTypeId === "minecraft:ocelot") &&
+                    (effectiveItemId === "minecraft:cod" || effectiveItemId === "minecraft:salmon" || effectiveItemId === "minecraft:tropical_fish" || effectiveItemId === "minecraft:pufferfish")) {
+                    addScore(player, OBJECTIVES.TAME_CAT_FISH);
+                }
+                // Bird Lover (Seeds)
+                if (isConsumed && targetTypeId === "minecraft:parrot" && effectiveItemId.includes("seeds")) {
+                    addScore(player, OBJECTIVES.TAME_PARROT_SEEDS);
+                }
+
+                // Blue Axolotl Catching
+                if (targetTypeId === "minecraft:axolotl") {
+                    const variant = target.getComponent("minecraft:variant")?.value;
+                    if (variant === 4) {
+                        if (effectiveItemId === "minecraft:water_bucket" || effectiveItemId === "minecraft:bucket") {
+                            player.addTag("title_axolotl_chosen");
+                            player.sendMessage("§b[称号条件達成]§f 青色のウーパールーパーを捕獲しました！");
+                        }
+                    }
                 }
             }
         }
-    }
-    // 13. Fishing (Rod Uses)
-    if (itemStack && itemStack.typeId === "minecraft:fishing_rod") {
-        addScore(player, OBJECTIVES.FISHING);
-    }
+
+        // 13. Fishing (Rod Uses) - 釣り竿の使用 (消費チェックなし)
+        const currentMainHand = player.getComponent("equippable")?.getEquipment("Mainhand");
+        if (currentMainHand?.typeId === "minecraft:fishing_rod") {
+            addScore(player, OBJECTIVES.FISHING);
+        }
+    });
 });
 
 // Composter

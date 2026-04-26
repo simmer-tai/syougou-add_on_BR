@@ -22,27 +22,7 @@ const RARITY_NAMES = {
     crafter: "クラフター"
 };
 
-const TRACKERS = [
-    { id: "none", name: "なし", getValue: (p) => null },
-    { id: "total_blocks", name: "総ブロック破壊数", getValue: (p) => `総破壊数: ${getScore(p, OBJECTIVES.TOTAL_BLOCKS)}` },
-    { id: "moved_xz", name: "移動ブロック数（X,Z）", getValue: (p) => `移動: X:${getScore(p, OBJECTIVES.MOVED_X)} Z:${getScore(p, OBJECTIVES.MOVED_Z)}` },
-    { id: "mobs_total", name: "総モブ殺害数", getValue: (p) => `総撃破数: ${getScore(p, OBJECTIVES.MOBS_TOTAL)}` },
-    { id: "crops", name: "作物収穫回数", getValue: (p) => `作物収穫数: ${getScore(p, OBJECTIVES.CROPS)}` },
-    { id: "ore_diamond", name: "ダイアモンド鉱石破壊数", getValue: (p) => `ダイヤ採掘数: ${getScore(p, OBJECTIVES.ORE_DIAMOND) + getScore(p, OBJECTIVES.ORE_DIAMOND_NS)}` },
-    {
-        id: "all_skills",
-        name: "各スキルのレベル",
-        getValue: (p) => {
-            const m = p.getDynamicProperty("skill_lv_mining") ?? 1;
-            const f = p.getDynamicProperty("skill_lv_farming") ?? 1;
-            const fo = p.getDynamicProperty("skill_lv_forestry") ?? 1;
-            const h = p.getDynamicProperty("skill_lv_hunter") ?? 1;
-            const hu = p.getDynamicProperty("skill_lv_husbandry") ?? 1;
-            const e = p.getDynamicProperty("skill_lv_excavation") ?? 1;
-            return `\uE300${m} \uE301${f} \uE302${fo} \uE304${h} \uE305${hu} \uE306${e}`;
-        }
-    }
-];
+
 
 const TITLES = [
     // Leather
@@ -50,6 +30,10 @@ const TITLES = [
     { id: "novice_crafter", name: "駆け出しクラフター", rarity: "leather", condition: "木または石のツールを入手", check: (p) => hasTool(p) },
     { id: "miner_beginner", name: "初心マイナー", rarity: "leather", condition: "採掘スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_mining") ?? 1) >= 5 },
     { id: "farmer_beginner", name: "初心ファーマー", rarity: "leather", condition: "農業スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_farming") ?? 1) >= 5 },
+    { id: "forester_beginner", name: "初心フォレスター", rarity: "leather", condition: "林業スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_forestry") ?? 1) >= 5 },
+    { id: "hunter_beginner", name: "初心ハンター", rarity: "leather", condition: "狩人スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 5 },
+    { id: "excavation_beginner", name: "初心メンテナー", rarity: "leather", condition: "整地スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 5 },
+    { id: "husbandry_beginner", name: "初心ブリーダー", rarity: "leather", condition: "畜産スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 5 },
     { id: "winter_protection", name: "防寒", rarity: "leather", condition: "革装備一式を装備", check: (p) => hasFullArmor(p, "leather") },
 
     { id: "clumsy", name: "へたくそ", rarity: "leather", condition: "10回死亡", check: (p) => getScore(p, OBJECTIVES.DEATHS) >= 10 },
@@ -63,6 +47,10 @@ const TITLES = [
     { id: "iron_defense", name: "鉄壁の防御", rarity: "iron", condition: "鉄装備一式を装備", check: (p) => hasFullArmor(p, "iron") },
     { id: "miner_intermediate", name: "中級マイナー", rarity: "iron", condition: "採掘スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_mining") ?? 1) >= 15 },
     { id: "farmer_intermediate", name: "中級ファーマー", rarity: "iron", condition: "農業スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_farming") ?? 1) >= 15 },
+    { id: "forester_intermediate", name: "中級フォレスター", rarity: "iron", condition: "林業スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_forestry") ?? 1) >= 15 },
+    { id: "hunter_intermediate", name: "中級ハンター", rarity: "iron", condition: "狩人スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 15 },
+    { id: "excavation_intermediate", name: "中級メンテナー", rarity: "iron", condition: "整地スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 15 },
+    { id: "husbandry_intermediate", name: "中級ブリーダー", rarity: "iron", condition: "畜産スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 15 },
     { id: "iron_heart", name: "鉄の心", rarity: "iron", condition: "鉄鉱石を64個採掘", check: (p) => getScore(p, OBJECTIVES.ORE_IRON) >= 64 },
     { id: "nether_visitor", name: "ネザーの訪問者", rarity: "iron", condition: "ネザーに行く", check: (p) => getScore(p, OBJECTIVES.VISIT_NETHER) >= 1 },
     { id: "riding_club", name: "乗馬クラブ", rarity: "iron", condition: "馬（ロバ・ラバ）を手懐ける（乗る）", check: (p) => getScore(p, OBJECTIVES.TAME_HORSE) >= 1 },
@@ -74,6 +62,10 @@ const TITLES = [
     // Gold
     { id: "miner_advanced", name: "上級マイナー", rarity: "gold", condition: "採掘スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_mining") ?? 1) >= 30 },
     { id: "farmer_advanced", name: "上級ファーマー", rarity: "gold", condition: "農業スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_farming") ?? 1) >= 30 },
+    { id: "forester_advanced", name: "上級フォレスター", rarity: "gold", condition: "林業スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_forestry") ?? 1) >= 30 },
+    { id: "hunter_advanced", name: "上級ハンター", rarity: "gold", condition: "狩人スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 30 },
+    { id: "excavation_advanced", name: "上級メンテナー", rarity: "gold", condition: "整地スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 30 },
+    { id: "husbandry_advanced", name: "上級ブリーダー", rarity: "gold", condition: "畜産スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 30 },
     { id: "driller", name: "ドリラー", rarity: "gold", condition: "ブロックを2,500個破壊", check: (p) => getScore(p, OBJECTIVES.TOTAL_BLOCKS) >= 2500 },
     { id: "sniper", name: "スナイパー", rarity: "gold", condition: "弓/クロスボウでモブを100体討伐", check: (p) => getScore(p, OBJECTIVES.KILL_BOW) >= 100 },
     { id: "bomb_squad", name: "爆弾処理班", rarity: "gold", condition: "クリーパーを50体討伐（自爆させずに）", check: (p) => getScore(p, OBJECTIVES.KILL_CREEPER) >= 50 },
@@ -108,6 +100,10 @@ const TITLES = [
     },
     { id: "miner_skilled", name: "熟練マイナー", rarity: "diamond", condition: "採掘スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_mining") ?? 1) >= 50 },
     { id: "farmer_skilled", name: "熟練ファーマー", rarity: "diamond", condition: "農業スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_farming") ?? 1) >= 50 },
+    { id: "forester_skilled", name: "熟練フォレスター", rarity: "diamond", condition: "林業スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_forestry") ?? 1) >= 50 },
+    { id: "hunter_skilled", name: "熟練ハンター", rarity: "diamond", condition: "狩人スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 50 },
+    { id: "excavation_skilled", name: "熟練メンテナー", rarity: "diamond", condition: "整地スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 50 },
+    { id: "husbandry_skilled", name: "熟練ブリーダー", rarity: "diamond", condition: "畜産スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 50 },
     { id: "master_builder", name: "建築の達人", rarity: "diamond", condition: "ブロックを5,000個設置", check: (p) => getScore(p, OBJECTIVES.PLACED_BLOCKS) >= 5000 },
     { id: "traveler", name: "旅人", rarity: "diamond", condition: "50,000ブロック移動", check: (p) => getScore(p, OBJECTIVES.MOVED_BLOCKS) >= 50000 },
 
@@ -131,6 +127,10 @@ const TITLES = [
     { id: "destroyer", name: "破壊者", rarity: "legend", condition: "ブロックを50,000個破壊", check: (p) => getScore(p, OBJECTIVES.TOTAL_BLOCKS) >= 50000 },
     { id: "miner_master", name: "達人マイナー", rarity: "legend", condition: "採掘スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_mining") ?? 1) >= 70 },
     { id: "farmer_master", name: "達人ファーマー", rarity: "legend", condition: "農業スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_farming") ?? 1) >= 70 },
+    { id: "forester_master", name: "達人フォレスター", rarity: "legend", condition: "林業スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_forestry") ?? 1) >= 70 },
+    { id: "hunter_master", name: "達人ハンター", rarity: "legend", condition: "狩人スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 70 },
+    { id: "excavation_master", name: "達人メンテナー", rarity: "legend", condition: "整地スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 70 },
+    { id: "husbandry_master", name: "達人ブリーダー", rarity: "legend", condition: "畜産スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 70 },
     {
         id: "survivor_100", name: "サバイバー100", rarity: "legend", condition: "100日間死なずに生存", check: (p) => {
             const startTick = p.getDynamicProperty("start_tick") ?? world.getAbsoluteTime();
@@ -152,6 +152,10 @@ const TITLES = [
     { id: "adventurer", name: "冒険家", rarity: "crafter", condition: "10,000,000ブロック移動", check: (p) => getScore(p, OBJECTIVES.MOVED_BLOCKS) >= 10000000 },
     { id: "miner_extreme", name: "極地マイナー", rarity: "crafter", condition: "採掘スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_mining") ?? 1) >= 100 },
     { id: "farmer_extreme", name: "極地ファーマー", rarity: "crafter", condition: "農業スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_farming") ?? 1) >= 100 },
+    { id: "forester_extreme", name: "極地フォレスター", rarity: "crafter", condition: "林業スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_forestry") ?? 1) >= 100 },
+    { id: "hunter_extreme", name: "極地ハンター", rarity: "crafter", condition: "狩人スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 100 },
+    { id: "excavation_extreme", name: "極地メンテナー", rarity: "crafter", condition: "整地スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 100 },
+    { id: "husbandry_extreme", name: "極地ブリーダー", rarity: "crafter", condition: "畜産スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 100 },
     { id: "abyss_ruler", name: "深淵の覇者", rarity: "crafter", condition: "ウォーデンを10体討伐", check: (p) => getScore(p, OBJECTIVES.KILL_WARDEN) >= 10 },
     { id: "wither_storm", name: "ウィザーストーム", rarity: "crafter", condition: "ウィザーを50体討伐", check: (p) => getScore(p, OBJECTIVES.KILL_WITHER) >= 50 },
     { id: "silent_guardian", name: "静寂の守り人", rarity: "crafter", condition: "モブ討伐総数 100,000体", check: (p) => getScore(p, OBJECTIVES.MOBS_TOTAL) >= 100000 }, // Assuming MOBS_TOTAL is generic kills? Original code: 8. Hostile -> MONSTERS, 7. Animals -> ANIMALS. 9. Total -> MOBS_TOTAL. Yes.
@@ -271,10 +275,9 @@ function showMainMenu(player) {
         .title("称号メニュー")
         .body("カテゴリを選択してください")
         .button("称号を変更") // Button 0
-        .button("トラッカーを変更") // Button 1
-        .button("称号一覧") // Button 2
-        .button("統計データ確認") // Button 3
-        .button("現在のバフを確認"); // Button 4
+        .button("称号一覧") // Button 1
+        .button("統計データ確認") // Button 2
+        .button("現在のバフを確認"); // Button 3
 
     form.show(player).then(response => {
         if (response.canceled) return;
@@ -283,16 +286,13 @@ function showMainMenu(player) {
             case 0: // 称号を変更
                 showTitleSelectionMenu(player);
                 break;
-            case 1: // トラッカーを変更
-                showTrackerMenu(player);
-                break;
-            case 2: // 称号一覧
+            case 1: // 称号一覧
                 showTitleList(player);
                 break;
-            case 3: // 統計データ確認
+            case 2: // 統計データ確認
                 showStatsMenu(player);
                 break;
-            case 4: // 現在のバフを確認
+            case 3: // 現在のバフを確認
                 showBuffsMenu(player);
                 break;
         }
@@ -407,23 +407,7 @@ function showTitleSelectionMenu(player) {
     });
 }
 
-function showTrackerMenu(player) {
-    const form = new ActionFormData()
-        .title("トラッカーを変更")
-        .body("ネームタグに表示する情報を選択してください。");
 
-    TRACKERS.forEach(t => {
-        form.button(t.name);
-    });
-
-    form.show(player).then(res => {
-        if (res.canceled) return;
-        const tracker = TRACKERS[res.selection];
-        player.setDynamicProperty("selected_tracker", tracker.id);
-        player.sendMessage(`§aトラッカーを「${tracker.name}」に変更しました。`);
-        // Immediate update will happen in the next tick loop
-    });
-}
 
 function showSubMenu(player, rarity, titles) {
     const color = RARITY_COLORS[rarity];
@@ -571,29 +555,19 @@ system.runInterval(() => {
         // Combine MR + Title + Name + Tracker
 
         const mrLevel = player.getDynamicProperty("skill_lv_mastery") ?? 1;
-        let nameTag = `§bMR:${mrLevel}§r `;
+        let nameTag = `§7[§bMR.${mrLevel}§7]§r`;
 
         // 1. Get Active Title
         const activeTitleId = player.getDynamicProperty("active_title");
         if (activeTitleId) {
             const title = TITLES.find(t => t.id === activeTitleId);
             if (title) {
-                nameTag += `${RARITY_COLORS[title.rarity]}${title.name}§r `;
+                nameTag += `\n${RARITY_COLORS[title.rarity]}《${title.name}》§r`;
             }
         }
-        nameTag += player.name;
+        nameTag += `\n§f${player.name}§r`;
 
-        // 2. Get Active Tracker
-        const trackerId = player.getDynamicProperty("selected_tracker");
-        if (trackerId && trackerId !== "none") {
-            const tracker = TRACKERS.find(t => t.id === trackerId);
-            if (tracker) {
-                const value = tracker.getValue(player);
-                if (value !== null) {
-                    nameTag += `\n§7${value}§r`;
-                }
-            }
-        }
+
 
         // Update only if changed to avoid packet spam (though setting same string might be optimized by engine, safe to check)
         if (player.nameTag !== nameTag) {

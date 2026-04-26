@@ -22,8 +22,8 @@ export function syncSkillLevelsToScoreboard(player) {
         const lvKey = `skill_lv_${skillId}`;
         const level = player.getDynamicProperty(lvKey) ?? 1;
 
-        // スコアボード名は "sk_<skillId>" とする (文字数制限回避のため短縮)
-        const objectiveName = `sk_${skillId}`;
+        // スコアボード名は "mining", "farming" 等のリテラル名を使用 (UI表示設定に合わせる)
+        const objectiveName = skillId;
 
         try {
             let objective = world.scoreboard.getObjective(objectiveName);
