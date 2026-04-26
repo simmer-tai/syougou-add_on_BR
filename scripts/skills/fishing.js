@@ -84,9 +84,8 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
 // 釣り針の消滅を監視
 // 消滅時にプレイヤーのインベントリを一時的に監視する
-world.afterEvents.entityRemove.subscribe((event) => {
-    // Note: event.removedEntityId (API 1.13.0+) or event.entity.id
-    const hookId = event.removedEntityId ?? event.entity?.id;
+world.beforeEvents.entityRemove.subscribe((event) => {
+    const hookId = event.entity?.id;
     if (!hookId) return;
 
     const playerId = activeHooks.get(hookId);
