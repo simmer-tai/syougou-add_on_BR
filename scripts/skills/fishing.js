@@ -40,7 +40,7 @@ const lastCastPlayer = new Map();
 // 監視中の浮き: hookId -> { playerId, dimensionId, snapshot }
 const watchedHooks = new Map();
 
-// 消滅後の監視リスト: playerId -> { snapshot, ticksWaited }
+// 消滅後の監視リスト: hookId -> { playerId, snapshot, ticksWaited }
 const pendingChecks = new Map();
 
 /**
@@ -122,8 +122,9 @@ system.runInterval(() => {
             const player = world.getAllPlayers().find(p => p.id === data.playerId);
             if (!player?.isValid()) continue;
 
-            // キャスト時のスナップショットを保持したまま監視待機リストに移動
-            pendingChecks.set(data.playerId, {
+            // hookIdをキーにして監視待機リストに移動
+            pendingChecks.set(hookId, {
+                playerId: data.playerId,
                 snapshot: data.snapshot,
                 ticksWaited: 0
             });
@@ -131,16 +132,16 @@ system.runInterval(() => {
     }
 
     // 2. 消滅後のインベントリ増加待機監視
-    for (const [playerId, pending] of pendingChecks) {
-        const player = world.getAllPlayers().find(p => p.id === playerId);
+    for (const [hookId, pending] of pendingChecks) {
+        const player = world.getAllPlayers().find(p => p.id === pending.playerId);
         if (!player?.isValid()) {
-            pendingChecks.delete(playerId);
+            pendingChecks.delete(hookId);
             continue;
         }
 
         const afterSnapshot = getInventorySnapshot(player);
         if (!afterSnapshot) {
-            pendingChecks.delete(playerId);
+            pendingChecks.delete(hookId);
             continue;
         }
 
@@ -154,15 +155,17 @@ system.runInterval(() => {
             else if (JUNK_ITEMS.has(typeId)) maxXp = Math.max(maxXp, XP_JUNK);
         }
 
+        // アイテム獲得を検知したらXP付与して監視終了
         if (maxXp > 0) {
             updateSkillXp(player, "fishing", "漁業", maxXp);
-            pendingChecks.delete(playerId);
+            pendingChecks.delete(hookId);
             continue;
         }
 
+        // 最大20tick (約1秒) まで監視を続ける
         pending.ticksWaited += 2;
         if (pending.ticksWaited >= 20) {
-            pendingChecks.delete(playerId);
+            pendingChecks.delete(hookId);
         }
     }
 }, 2);
