@@ -7,6 +7,7 @@ import "./skills/forestry.js";
 import "./skills/hunter.js";
 import "./skills/husbandry.js";
 import "./skills/excavation.js";
+import "./skills/fishing.js";
 import "./skills/mastery.js";
 import "./admin.js";
 import "./levels_sidebar.js";

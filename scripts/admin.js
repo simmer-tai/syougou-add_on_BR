@@ -8,7 +8,8 @@ const SKILL_DEFINITIONS = {
     hunter: { name: "狩猟", icon: "⚔️" },
     husbandry: { name: "畜産", icon: "🐄" },
     mastery: { name: "マスタリー", icon: "👑" },
-    excavation: { name: "整地", icon: "🏗️" }
+    excavation: { name: "整地", icon: "🏗️" },
+    fishing: { name: "漁業", icon: "🎣" }
 };
 
 async function showCheatSkillSelect(player) {

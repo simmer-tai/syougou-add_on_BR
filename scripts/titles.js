@@ -34,6 +34,7 @@ const TITLES = [
     { id: "hunter_beginner", name: "初心ハンター", rarity: "leather", condition: "狩人スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 5 },
     { id: "excavation_beginner", name: "初心メンテナー", rarity: "leather", condition: "整地スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 5 },
     { id: "husbandry_beginner", name: "初心ブリーダー", rarity: "leather", condition: "畜産スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 5 },
+    { id: "fishing_beginner", name: "初心フィッシャー", rarity: "leather", condition: "漁業スキルLv5到達", check: (p) => (p.getDynamicProperty("skill_lv_fishing") ?? 1) >= 5 },
     { id: "winter_protection", name: "防寒", rarity: "leather", condition: "革装備一式を装備", check: (p) => hasFullArmor(p, "leather") },
 
     { id: "clumsy", name: "へたくそ", rarity: "leather", condition: "10回死亡", check: (p) => getScore(p, OBJECTIVES.DEATHS) >= 10 },
@@ -51,6 +52,7 @@ const TITLES = [
     { id: "hunter_intermediate", name: "中級ハンター", rarity: "iron", condition: "狩人スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 15 },
     { id: "excavation_intermediate", name: "中級メンテナー", rarity: "iron", condition: "整地スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 15 },
     { id: "husbandry_intermediate", name: "中級ブリーダー", rarity: "iron", condition: "畜産スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 15 },
+    { id: "fishing_intermediate", name: "中級フィッシャー", rarity: "iron", condition: "漁業スキルLv15到達", check: (p) => (p.getDynamicProperty("skill_lv_fishing") ?? 1) >= 15 },
     { id: "iron_heart", name: "鉄の心", rarity: "iron", condition: "鉄鉱石を64個採掘", check: (p) => getScore(p, OBJECTIVES.ORE_IRON) >= 64 },
     { id: "nether_visitor", name: "ネザーの訪問者", rarity: "iron", condition: "ネザーに行く", check: (p) => getScore(p, OBJECTIVES.VISIT_NETHER) >= 1 },
     { id: "riding_club", name: "乗馬クラブ", rarity: "iron", condition: "馬（ロバ・ラバ）を手懐ける（乗る）", check: (p) => getScore(p, OBJECTIVES.TAME_HORSE) >= 1 },
@@ -66,6 +68,7 @@ const TITLES = [
     { id: "hunter_advanced", name: "上級ハンター", rarity: "gold", condition: "狩人スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 30 },
     { id: "excavation_advanced", name: "上級メンテナー", rarity: "gold", condition: "整地スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 30 },
     { id: "husbandry_advanced", name: "上級ブリーダー", rarity: "gold", condition: "畜産スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 30 },
+    { id: "fishing_advanced", name: "上級フィッシャー", rarity: "gold", condition: "漁業スキルLv30到達", check: (p) => (p.getDynamicProperty("skill_lv_fishing") ?? 1) >= 30 },
     { id: "driller", name: "ドリラー", rarity: "gold", condition: "ブロックを2,500個破壊", check: (p) => getScore(p, OBJECTIVES.TOTAL_BLOCKS) >= 2500 },
     { id: "sniper", name: "スナイパー", rarity: "gold", condition: "弓/クロスボウでモブを100体討伐", check: (p) => getScore(p, OBJECTIVES.KILL_BOW) >= 100 },
     { id: "bomb_squad", name: "爆弾処理班", rarity: "gold", condition: "クリーパーを50体討伐（自爆させずに）", check: (p) => getScore(p, OBJECTIVES.KILL_CREEPER) >= 50 },
@@ -104,6 +107,7 @@ const TITLES = [
     { id: "hunter_skilled", name: "熟練ハンター", rarity: "diamond", condition: "狩人スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 50 },
     { id: "excavation_skilled", name: "熟練メンテナー", rarity: "diamond", condition: "整地スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 50 },
     { id: "husbandry_skilled", name: "熟練ブリーダー", rarity: "diamond", condition: "畜産スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 50 },
+    { id: "fishing_skilled", name: "熟練フィッシャー", rarity: "diamond", condition: "漁業スキルLv50到達", check: (p) => (p.getDynamicProperty("skill_lv_fishing") ?? 1) >= 50 },
     { id: "master_builder", name: "建築の達人", rarity: "diamond", condition: "ブロックを5,000個設置", check: (p) => getScore(p, OBJECTIVES.PLACED_BLOCKS) >= 5000 },
     { id: "traveler", name: "旅人", rarity: "diamond", condition: "50,000ブロック移動", check: (p) => getScore(p, OBJECTIVES.MOVED_BLOCKS) >= 50000 },
 
@@ -131,6 +135,7 @@ const TITLES = [
     { id: "hunter_master", name: "達人ハンター", rarity: "legend", condition: "狩人スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 70 },
     { id: "excavation_master", name: "達人メンテナー", rarity: "legend", condition: "整地スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 70 },
     { id: "husbandry_master", name: "達人ブリーダー", rarity: "legend", condition: "畜産スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 70 },
+    { id: "fishing_master", name: "達人フィッシャー", rarity: "legend", condition: "漁業スキルLv70到達", check: (p) => (p.getDynamicProperty("skill_lv_fishing") ?? 1) >= 70 },
     {
         id: "survivor_100", name: "サバイバー100", rarity: "legend", condition: "100日間死なずに生存", check: (p) => {
             const startTick = p.getDynamicProperty("start_tick") ?? world.getAbsoluteTime();
@@ -156,6 +161,7 @@ const TITLES = [
     { id: "hunter_extreme", name: "極地ハンター", rarity: "crafter", condition: "狩人スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_hunter") ?? 1) >= 100 },
     { id: "excavation_extreme", name: "極地メンテナー", rarity: "crafter", condition: "整地スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_excavation") ?? 1) >= 100 },
     { id: "husbandry_extreme", name: "極地ブリーダー", rarity: "crafter", condition: "畜産スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_husbandry") ?? 1) >= 100 },
+    { id: "fishing_extreme", name: "極地フィッシャー", rarity: "crafter", condition: "漁業スキルLv100到達", check: (p) => (p.getDynamicProperty("skill_lv_fishing") ?? 1) >= 100 },
     { id: "abyss_ruler", name: "深淵の覇者", rarity: "crafter", condition: "ウォーデンを10体討伐", check: (p) => getScore(p, OBJECTIVES.KILL_WARDEN) >= 10 },
     { id: "wither_storm", name: "ウィザーストーム", rarity: "crafter", condition: "ウィザーを50体討伐", check: (p) => getScore(p, OBJECTIVES.KILL_WITHER) >= 50 },
     { id: "silent_guardian", name: "静寂の守り人", rarity: "crafter", condition: "モブ討伐総数 100,000体", check: (p) => getScore(p, OBJECTIVES.MOBS_TOTAL) >= 100000 }, // Assuming MOBS_TOTAL is generic kills? Original code: 8. Hostile -> MONSTERS, 7. Animals -> ANIMALS. 9. Total -> MOBS_TOTAL. Yes.

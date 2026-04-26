@@ -9,6 +9,7 @@ system.runInterval(() => {
             const lvHunter = player.getDynamicProperty("skill_lv_hunter") ?? 1;
             const lvHusbandry = player.getDynamicProperty("skill_lv_husbandry") ?? 1;
             const lvExcavation = player.getDynamicProperty("skill_lv_excavation") ?? 1;
+            const lvFishing = player.getDynamicProperty("skill_lv_fishing") ?? 1;
             const lvMastery = player.getDynamicProperty("skill_lv_mastery") ?? 1;
 
             let text = `sidebar:§l§b[ マスタリー: Lv.${lvMastery} ]§r\n`;
@@ -17,7 +18,8 @@ system.runInterval(() => {
             text += `§2林業: §fLv.${lvForestry}§r\n`;
             text += `§c狩人: §fLv.${lvHunter}§r\n`;
             text += `§d畜産: §fLv.${lvHusbandry}§r\n`;
-            text += `§e整地: §fLv.${lvExcavation}§r`;
+            text += `§e整地: §fLv.${lvExcavation}§r\n`;
+            text += `§b漁業: §fLv.${lvFishing}§r`;
 
             player.onScreenDisplay.setTitle(text, {
                 fadeInDuration: 0,

@@ -7,7 +7,8 @@ const SKILL_IDS = [
     "mastery",
     "hunter",
     "husbandry",
-    "excavation"
+    "excavation",
+    "fishing"
 ];
 
 /**
