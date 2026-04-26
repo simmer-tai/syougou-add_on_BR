@@ -34,10 +34,10 @@ const JUNK_ITEMS = new Set([
     "minecraft:tripwire_hook"
 ]);
 
-// 直近に釣り竿を使ったプレイヤー: playerId -> { player }
+// 直近に釣り竿を使ったプレイヤー: playerId -> { player, snapshot }
 const lastCastPlayer = new Map();
 
-// 監視中の浮き: hookId -> { playerId, dimensionId }
+// 監視中の浮き: hookId -> { playerId, dimensionId, snapshot }
 const watchedHooks = new Map();
 
 // 消滅後の監視リスト: playerId -> { snapshot, ticksWaited }
@@ -64,9 +64,10 @@ function getInventorySnapshot(player) {
 world.afterEvents.itemUse.subscribe((event) => {
     if (event.itemStack.typeId !== "minecraft:fishing_rod") return;
     
-    // 使用したプレイヤーを記録
+    // キャスト時点のスナップショットを記録
     lastCastPlayer.set(event.source.id, {
-        player: event.source
+        player: event.source,
+        snapshot: getInventorySnapshot(event.source)
     });
 });
 
@@ -98,11 +99,14 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
     if (!bestPlayerId) return;
 
+    const data = lastCastPlayer.get(bestPlayerId);
     lastCastPlayer.delete(bestPlayerId);
 
+    // キャスト時のスナップショットを引き継ぐ
     watchedHooks.set(entity.id, {
         playerId: bestPlayerId,
-        dimensionId: entity.dimension.id
+        dimensionId: entity.dimension.id,
+        snapshot: data.snapshot
     });
 });
 
@@ -118,9 +122,9 @@ system.runInterval(() => {
             const player = world.getAllPlayers().find(p => p.id === data.playerId);
             if (!player?.isValid()) continue;
 
-            // 浮きが消えた瞬間にスナップショットを取得し、監視リストに移動
+            // キャスト時のスナップショットを保持したまま監視待機リストに移動
             pendingChecks.set(data.playerId, {
-                snapshot: getInventorySnapshot(player),
+                snapshot: data.snapshot,
                 ticksWaited: 0
             });
         }
